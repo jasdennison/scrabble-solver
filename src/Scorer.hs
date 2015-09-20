@@ -1,4 +1,4 @@
-{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE DeriveAnyClass, DeriveGeneric, NamedFieldPuns #-}
 
 module Scorer
   (Dictionary,
@@ -18,6 +18,7 @@ import Data.Char
 import Data.List
 import qualified Data.Map.Strict as Map
 import Data.Maybe
+import GHC.Generics (Generic)
 import Board
 import Trie
 
@@ -43,9 +44,8 @@ data Move = Move {
   mWord :: String,
   mScore :: Int,
   mTiles :: [TileValue]
-  } deriving (Eq, Ord)
+  } deriving (Eq, Ord, Generic, NFData)
 
-instance NFData Move
 
 applyWordPlacements :: BoardDesign -> Dictionary -> WordPlacementMap -> [TileValue] -> [Move]
 applyWordPlacements bd dict wpMap perm = case Map.lookup (length perm) wpMap of

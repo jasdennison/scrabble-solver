@@ -1,4 +1,4 @@
-{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE DeriveAnyClass, DeriveGeneric, NamedFieldPuns #-}
 
 module Board
   (Dimension,
@@ -18,22 +18,24 @@ module Board
 where
 
 import Prelude hiding (Left, Right)
+import Control.DeepSeq
 import Data.Array.IArray
 import Data.List
 import qualified Data.Map.Strict as Map
+import GHC.Generics (Generic)
 
 type Dimension = (Int, Int)
 type Position = (Int, Int)
 type WordPlacementMap = Map.Map Int [WordPlacement]
 
 data Direction = Up | Down | Left | Right
-  deriving (Show, Eq, Ord)
+  deriving (Show, Eq, Ord, Generic, NFData)
 
 data BoardCell = Empty | Full TileValue
   deriving (Show, Eq)
 
 data TileValue = BlankT Char | MarkedT Char
-  deriving (Show, Eq, Ord)
+  deriving (Show, Eq, Ord, Generic, NFData)
 
 data Board = Board {
   bDimension :: Dimension,
