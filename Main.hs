@@ -21,7 +21,7 @@ import Parsers
 import Scorer
 import Trie
 
-dictionaryPath = "/Users/jasdennison/Projects/haskell/scrabbleSolver/config/enable1.dict"
+dictionaryPath = "config/enable1.dict"
 
 instance ToJSON Move where
   toJSON m = object ["word" .= mWord m,
