@@ -1,8 +1,5 @@
-{-# LANGUAGE NamedFieldPuns #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE DeriveDataTypeable #-}
-{-# LANGUAGE StandaloneDeriving #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE DeriveDataTypeable, NamedFieldPuns, OverloadedStrings #-}  
+{-# LANGUAGE ScopedTypeVariables, StandaloneDeriving #-}
 
 import Control.DeepSeq
 import Control.Exception
