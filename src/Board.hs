@@ -1,4 +1,6 @@
-{-# LANGUAGE DeriveAnyClass, DeriveGeneric, NamedFieldPuns #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE NamedFieldPuns #-}
 
 module Board
   (Dimension,
@@ -10,6 +12,7 @@ module Board
    Board(..),
    TilePlacement(..),
    WordPlacement(..),
+   tileToChar,
    joinPoints,
    genWordPlacements,
    genTilePlacement,
@@ -46,9 +49,13 @@ data Board = Board {
 data TilePlacement = TileP {
   tPosition :: Position,
   tUp :: [TileValue],
+  tUpS :: String,
   tDown :: [TileValue],
+  tDownS :: String,
   tLeft :: [TileValue],
-  tRight :: [TileValue]
+  tLeftS :: String,
+  tRight :: [TileValue],
+  tRightS :: String
   } deriving (Show)
 
 data WordPlacement = WordP {
@@ -76,47 +83,64 @@ genOffsetWordPlacements b dir ((i, j), offset) = fmap mkWord offsetTilePlacement
 genTilePlacements :: Board -> Direction -> Position -> Int -> [TilePlacement]
 genTilePlacements b dir (i, j) 0 = []
 genTilePlacements b dir (i, j) n
-  | onBoard b (i, j) = if empty b (i, j)
-                         then bTiles b ! (i, j) : genTilePlacements b dir pos (n-1)
-                         else genTilePlacements b dir pos n
+  | onBoard b (i, j) =
+      if empty b (i, j)
+         then bTiles b ! (i, j) : genTilePlacements b dir pos (n-1)
+         else genTilePlacements b dir pos n
   | otherwise = []
   where pos = nextPos (i, j) dir
 
 genTilePlacement :: Board -> Position -> TilePlacement
-genTilePlacement b (i, j) = TileP { tPosition = (i, j), tUp = up, tDown = down, tLeft = left, tRight = right }
+genTilePlacement b (i, j) =
+  TileP { tPosition = (i, j)
+        , tUp = up
+        , tUpS = fmap tileToChar up
+        , tDown = down
+        , tDownS = fmap tileToChar down
+        , tLeft = left
+        , tLeftS = fmap tileToChar left
+        , tRight = right
+        , tRightS = fmap tileToChar right }
   where up = reverse (connectedString b (i, j) Up)
         down = connectedString b (i, j) Down
         left = reverse (connectedString b (i, j) Left)
         right = connectedString b (i, j) Right
 
 connectedString :: Board -> Position -> Direction -> [TileValue]
-connectedString b (i, j) dir = if onBoard b pos then
-                                 case bPlaces b ! pos of
-                                   Empty -> []
-                                   Full (MarkedT c) -> MarkedT c : connectedString b pos dir
-                                   Full (BlankT c) -> BlankT c : connectedString b pos dir
-                               else []
+connectedString b (i, j) dir =
+  if onBoard b pos
+     then
+       case bPlaces b ! pos of
+         Empty -> []
+         Full (MarkedT c) -> MarkedT c : connectedString b pos dir
+         Full (BlankT c) -> BlankT c : connectedString b pos dir
+     else []
   where pos = nextPos (i, j) dir
+
+tileToChar :: TileValue -> Char
+tileToChar (MarkedT c) = c
+tileToChar (BlankT c) = c
 
 offsets :: Board -> (Position, Int) -> Direction -> [(Position, Int)]
 offsets b ((i, j), n) dir
   | n == 0 = ((i, j), 0) : offsets b (pos, 1) dir
   | otherwise = if onBoard b (i, j) && empty b (i, j) && not (connected b (i, j)) && n < 7
-                  then ((i, j), n) : offsets b (pos, n+1) dir
-                  else []
+                   then ((i, j), n) : offsets b (pos, n+1) dir
+                   else []
   where pos = nextPos (i, j) (oppDirection dir)
 
 connected :: Board -> Position -> Bool
-connected b (i, j) =  or [onBoard b p && not (empty b p) | p<-adjacents (i, j)]
+connected b (i, j) = or [onBoard b p && not (empty b p) | p<-adjacents (i, j)]
 
 onBoard :: Board -> Position -> Bool
 onBoard b (i, j) = i >= 1 && i <= h && j >= 1 && j <= w
   where (h, w) = bDimension b
 
 empty :: Board -> Position -> Bool
-empty b (i, j) = case bPlaces b ! (i, j) of
-                   Empty -> True
-                   _ -> False
+empty b (i, j) =
+  case bPlaces b ! (i, j) of
+    Empty -> True
+    _ -> False
 
 nextPos :: Position -> Direction -> Position
 nextPos (i, j) Up = (i-1, j)
@@ -131,14 +155,15 @@ oppDirection Left = Right
 oppDirection Right = Left
 
 joinPoints :: Board -> [Position]
-joinPoints b = case emptyAdjacents of
-                 [] -> [midPoint (h, w)]
-                 _ -> rmdups emptyAdjacents
+joinPoints b =
+  case emptyAdjacents of
+    [] -> [midPoint (h, w)]
+    _ -> rmdups emptyAdjacents
   where (h, w) = bDimension b
         tilePositions = [(i, j) | i<-[1..h], j<-[1..w], not (empty b (i, j))]
         emptyAdjacents = filter validEmpty (concatMap adjacents tilePositions)
         validEmpty p = onBoard b p && empty b p
- 
+
 midPoint :: Dimension -> (Int, Int)
 midPoint (h, w) = (hq + hr, wq + wr)
   where (hq, hr) = h `divMod` 2

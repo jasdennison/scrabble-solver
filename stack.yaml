@@ -1,5 +1,14 @@
 flags: {}
 packages:
 - '.'
-extra-deps: [parsec-extra-0.1.0.5]
-resolver: lts-3.6
+extra-deps: [ parsec-extra-0.1.0.5
+            ]
+resolver: lts-3.17
+
+image:
+  container:
+    base: fpco/haskell-scratch
+
+docker:
+  enable: true
+

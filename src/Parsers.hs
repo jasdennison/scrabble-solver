@@ -1,4 +1,3 @@
-
 module Parsers
   (parseBoard,
    parseBoardDesign,
@@ -16,7 +15,7 @@ import Text.Parsec.Extra (eol)
 import Board hiding (Left, Right)
 import Scorer
 
-boardCell :: Parser BoardCell 
+boardCell :: Parser BoardCell
 boardCell = Empty <$ char '.'
         <|> Full . MarkedT <$> lower
         <|> Full . BlankT . toLower <$> upper
@@ -30,7 +29,7 @@ row w p = do
 
 parseBoard :: Dimension -> Parser Board
 parseBoard (h, w) = do
-  boardCells <- count h (row w boardCell) 
+  boardCells <- count h (row w boardCell)
   let elementsArray = array ((1, 1), (h, w)) (zip indices (concat boardCells))
   let emptyTilesArray = array ((1,1),(0,0)) []
   let board = Board { bDimension = (h, w), bPlaces = elementsArray, bTiles = emptyTilesArray }
@@ -82,7 +81,7 @@ parseBoardDesign = do
   multiplierCells <- count h (row w multiplierCell)
   let indices = [(i, j) | i<-[1..h], j<-[1..w]]
   let multipliers = array ((1, 1), (h, w)) (zip indices (concat multiplierCells))
-  return BoardDesign {bdDimension=(h, w), bdLetterScores=ls, bdBonus=b, bdMultipliers=multipliers }
+  return BoardDesign { bdDimension=(h, w), bdLetterScores=ls, bdBonus=b, bdMultipliers=multipliers }
 
 tile :: Parser Tile
 tile = ValueTile <$> lower

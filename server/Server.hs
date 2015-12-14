@@ -1,5 +1,8 @@
-{-# LANGUAGE DeriveDataTypeable, NamedFieldPuns, OverloadedStrings #-}  
-{-# LANGUAGE ScopedTypeVariables, StandaloneDeriving #-}
+{-# LANGUAGE DeriveDataTypeable #-}
+{-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneDeriving #-}
 
 import Control.DeepSeq
 import Control.Exception
@@ -11,6 +14,7 @@ import Data.List
 import Data.Text (pack)
 import Data.Typeable
 import Network.HTTP.Types.Status
+import Network.Wai.Middleware.Cors
 import Text.Parsec hiding (Empty)
 import Web.Spock.Safe hiding (head)
 import Board hiding (Left, Right)
@@ -43,7 +47,7 @@ parallelMap :: NFData b => (a -> b) -> [a] -> [b]
 parallelMap f xs = fmap f xs `using` parListChunk 1000 rdeepseq
 
 solveBoard :: String -> String -> String -> Dictionary -> Either String [Move]
-solveBoard boardDesign board tileHand dictionary = do 
+solveBoard boardDesign board tileHand dictionary = do
   ts <- parse parseTileHand "stdin" tileHand
     `failWith` "Tile hand failed to parse"
 
@@ -54,28 +58,28 @@ solveBoard boardDesign board tileHand dictionary = do
     `failWith` "Board failed to parse"
 
   let moves = findMoves bd b dictionary ts
-  return $ (sortBy (flip compare `on` mScore) (rmdups moves))
+  return $ sortBy (flip compare `on` mScore) (rmdups moves)
 
 instance Exception ParseError
 deriving instance Typeable ParseError
 
 failWith ::  Exception a => Either a b -> String -> Either String b
-failWith either msg  = case either of
-                         Left e -> Left msg
-                         Right v -> return v
+failWith either msg =
+  case either of
+    Left e -> Left msg
+    Right v -> return v
 
 main :: IO ()
 main = do
   dictionaryFile <- readFile dictionaryPath
   let dictionaryWords = filter (isLower . head) (lines dictionaryFile)
   let dictionary = force $ foldl' insertTrie emptyTrie dictionaryWords
- 
-  runSpock 8080 $ spockT id $
-    do get root $
-         text "Scrabble Solver."
-       --get ("solve" <//> var <//> var) $ solveR
-       get "solve" $ (solveR dictionary)
-                     
+
+  runSpock 8080 $ spockT id $ do
+      middleware simpleCors
+      get root (text "Scrabble Solver.")
+      get "solve" (solveR dictionary)
+
 solveR :: Dictionary -> ActionT IO ()
 solveR dictionary = do
   boardDesign <- param' "boardDesign"
